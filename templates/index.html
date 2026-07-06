@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Predict house prices using machine learning. Enter property details to get an instant price estimate. Built by Aditya Yashovardhan.">
+    <title>House Price Predictor — ML Powered</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏠</text></svg>">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="navbar-brand">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                <span>PricePredictor</span>
+            </a>
+            <ul class="nav-links">
+                <li>
+                    <a href="/" class="active">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                        Predict
+                    </a>
+                </li>
+                <li>
+                    <a href="/visualizations">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                        Insights
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-badge">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></svg>
+                Machine Learning Powered
+            </div>
+            <h1>
+                <span class="highlight">House Price</span> Predictor
+            </h1>
+            <p class="hero-description">
+                Get instant price estimates for properties using a trained regression model on real estate data points.
+            </p>
+
+            <div class="stats-row">
+                <div class="stat">
+                    <div class="stat-value">{{ locations|length }}</div>
+                    <div class="stat-label">Locations</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">{{ "%.1f"|format(metrics.get('linear_regression', {}).get('R2_Score', 0) * 100) }}%</div>
+                    <div class="stat-label">Accuracy (R²)</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">₹{{ "%.0f"|format(price_stats.get('median', 0)) }}L</div>
+                    <div class="stat-label">Median Price</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">{{ model_name }}</div>
+                    <div class="stat-label">Model</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Prediction Section -->
+    <section class="prediction-section">
+        <div class="container">
+            <div class="form-grid">
+
+                <!-- Left: Prediction Form -->
+                <div class="card" id="form-card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 15h2a2 2 0 1 0 0-4h-3c-1.1 0-2 .9-2 2v4a2 2 0 1 0 4 0v-1"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                        </div>
+                        <h2 class="card-title">Property Details</h2>
+                    </div>
+
+                    <form id="prediction-form" autocomplete="off">
+
+                        <!-- Location -->
+                        <div class="form-group">
+                            <label class="form-label" for="location-search">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+                                Location
+                            </label>
+                            <input type="text" id="location-search" class="form-control" placeholder="Search location..." style="margin-bottom: 8px;">
+                            <select name="location" id="location" class="form-control" required>
+                                <option value="">Select a location</option>
+                                {% for loc in locations %}
+                                <option value="{{ loc }}">{{ loc }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Total Area -->
+                        <div class="form-group">
+                            <label class="form-label" for="total_sqft">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                                Total Area (sq.ft)
+                            </label>
+                            <div class="slider-row">
+                                <input type="range" id="sqft-slider" class="form-range" min="300" max="6000" value="1200" step="50">
+                                <span class="slider-display" id="sqft-value">1,200</span>
+                            </div>
+                            <input type="number" name="total_sqft" id="total_sqft" class="form-control" value="1200" min="100" max="30000" step="50" required>
+                        </div>
+
+                        <!-- Bathrooms -->
+                        <div class="form-group">
+                            <label class="form-label" for="bath">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6 6.5 3.5a1.5 1.5 0 0 0-1-.5C4.683 3 4 3.683 4 4.5V17a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><line x1="10" x2="8" y1="5" y2="7"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M7 19v2"/><path d="M17 19v2"/></svg>
+                                Bathrooms
+                            </label>
+                            <div class="slider-row">
+                                <input type="range" id="bath-slider" class="form-range" min="1" max="10" value="2" step="1">
+                                <span class="slider-display" id="bath-value">2</span>
+                            </div>
+                            <input type="number" name="bath" id="bath" class="form-control" value="2" min="1" max="10" step="1" required>
+                        </div>
+
+                        <!-- Bedrooms -->
+                        <div class="form-group">
+                            <label class="form-label" for="bedrooms">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg>
+                                Bedrooms
+                            </label>
+                            <div class="slider-row">
+                                <input type="range" id="bedroom-slider" class="form-range" min="1" max="10" value="2" step="1">
+                                <span class="slider-display" id="bedroom-value">2</span>
+                            </div>
+                            <input type="number" name="bedrooms" id="bedrooms" class="form-control" value="2" min="1" max="10" step="1" required>
+                        </div>
+
+                        <!-- Submit -->
+                        <button type="submit" class="btn-primary" id="btn-predict">
+                            <span class="btn-label">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                                Predict Price
+                            </span>
+                            <div class="spinner"></div>
+                        </button>
+
+                    </form>
+                </div>
+
+                <!-- Right: Result Card -->
+                <div class="card result-card" id="result-card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        </div>
+                        <h2 class="card-title">Estimated Price</h2>
+                    </div>
+
+                    <!-- Placeholder -->
+                    <div class="result-placeholder" id="result-placeholder">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                        <p>Fill in the property details and click<br><strong>Predict Price</strong> to see the estimate.</p>
+                    </div>
+
+                    <!-- Success -->
+                    <div class="result-content" id="result-content">
+                        <div class="result-success-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                        </div>
+                        <div class="result-label">Predicted Price</div>
+                        <div class="result-price" id="result-price">—</div>
+                        <div class="result-subtitle">Based on real estate data analysis</div>
+
+                        <div class="result-details">
+                            <div class="detail-item">
+                                <div class="detail-label">Location</div>
+                                <div class="detail-value" id="detail-location">—</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Area</div>
+                                <div class="detail-value" id="detail-sqft">—</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Bathrooms</div>
+                                <div class="detail-value" id="detail-bath">—</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Bedrooms</div>
+                                <div class="detail-value" id="detail-bedrooms">—</div>
+                            </div>
+                        </div>
+
+                        <div class="confidence-note">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/></svg>
+                            Prediction is based on historical data. Actual prices may vary based on market conditions and property specifics.
+                        </div>
+                    </div>
+
+                    <!-- Error -->
+                    <div class="result-error" id="result-error">
+                        <div class="result-error-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                        </div>
+                        <p class="error-message" id="error-message">Something went wrong.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>Built by <strong>Aditya Yashovardhan</strong> &middot; Python, scikit-learn &amp; Flask</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
